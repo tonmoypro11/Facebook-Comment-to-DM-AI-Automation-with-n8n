@@ -1,0 +1,528 @@
+{
+  "name": "Facebook Comment-to-DM AI Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "multipleMethods": true,
+        "path": "facebook-comments",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "3df8b855-13bd-4af1-aad5-d38e6903baeb",
+      "name": "Facebook Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        32
+      ],
+      "webhookId": "5e762fe3-bda2-49c7-b17b-78b57fe38842"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "hub-mode",
+              "leftValue": "={{ $json.query['hub.mode'] }}",
+              "rightValue": "subscribe",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "hub-verify-token",
+              "leftValue": "={{ $json.query['hub.verify_token'] }}",
+              "rightValue": "ostad-student-token-123",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "4a9e852a-d3e8-40bd-94e2-36a326336c9c",
+      "name": "Is Verification Request?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        176,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.query['hub.challenge'] }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "93926078-b214-4614-aa82-b745bf0d0689",
+      "name": "Respond Challenge",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        336,
+        -128
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "EVENT_RECEIVED",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "ccd5029a-4811-4cec-821c-767f4598cded",
+      "name": "Acknowledge Event (200)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        288,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "is-feed",
+              "leftValue": "={{ $json.body.entry[0].changes[0].field }}",
+              "rightValue": "feed",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "is-comment",
+              "leftValue": "={{ $json.body.entry[0].changes[0].value.item }}",
+              "rightValue": "comment",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "is-add",
+              "leftValue": "={{ $json.body.entry[0].changes[0].value.verb }}",
+              "rightValue": "add",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "98ce1bee-e52f-40d9-8a99-8ec12de04f6b",
+      "name": "Only Feed Comments",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Pull post/comment/user details out of the Facebook feed event\nconst value = $json.body.entry[0].changes[0].value;\n\nreturn {\n  postId: value.post_id,\n  commentId: value.comment_id,\n  userId: value.from ? value.from.id : null,\n  userName: value.from ? value.from.name : null,\n  userComment: value.message || '',\n};"
+      },
+      "id": "1616c464-03e5-496c-8be4-36f6ca7c4864",
+      "name": "Extract Comment Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        656,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1obBm6mn2nBMbtYW53yOhw5KcdTOVFCpU4nXeGPbOh5c",
+          "mode": "list",
+          "cachedResultName": "CAMPAIGHN",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1obBm6mn2nBMbtYW53yOhw5KcdTOVFCpU4nXeGPbOh5c/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1obBm6mn2nBMbtYW53yOhw5KcdTOVFCpU4nXeGPbOh5c/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "26800e93-e5fb-418b-92c7-16fabf675885",
+      "name": "Read Campaigns",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        832,
+        -112
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ITCMC0SitqchrBpE",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "campaigns",
+        "options": {}
+      },
+      "id": "151c3e95-5144-4623-8082-058c7b85210b",
+      "name": "Aggregate Campaigns",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1024,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=A user commented on a Facebook post. Decide whether to send them the campaign resource.\n\nINCOMING COMMENT:\n- Post ID: {{ $('Extract Comment Data').item.json.postId }}\n- Comment ID: {{ $('Extract Comment Data').item.json.commentId }}\n- User Name: {{ $('Extract Comment Data').item.json.userName }}\n- User Comment: {{ $('Extract Comment Data').item.json.userComment }}\n\nAVAILABLE CAMPAIGNS (JSON array):\n{{ JSON.stringify($json.campaigns) }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are an assistant for a Facebook comment-to-DM automation.\n\nRules:\n1. Match the incoming Post ID against the \"Post ID\" field of the campaigns list. If no campaign matches the Post ID, set isValid=false.\n2. Only treat the comment as valid if the user genuinely wants the resource (e.g. asks for the link, mentions the trigger keyword, shows real interest).\n3. Ignore and reject spam, abusive, promotional, or irrelevant comments -> isValid=false.\n4. When isValid=true: put the matched campaign's Resource Link inside dmMessage as a helpful private message, and write a short friendly publicReply inviting them to check their inbox.\n5. When isValid=false: set dmMessage=\"\" and publicReply=\"\".\n6. ALL generated text (dmMessage and publicReply) MUST be written in Bengali (Bangla) only.\n\nReturn ONLY the structured JSON with keys: isValid (boolean), dmMessage (string), publicReply (string)."
+        }
+      },
+      "id": "48ac829b-b58e-4b84-b0f4-3f4aa357a04c",
+      "name": "Analyze Comment (AI Agent)",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1296,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "temperature": 0.4
+        }
+      },
+      "id": "5e8c4083-2676-44e5-88f7-229bc57dcdce",
+      "name": "OpenRouter Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1168,
+        368
+      ],
+      "credentials": {
+        "openRouterApi": {
+          "id": "hn2nZ8boEZA7F9vl",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\"isValid\":true,\"dmMessage\":\"\",\"publicReply\":\"\"}"
+      },
+      "id": "15b4fc43-77c9-409d-b99a-c5f6e5aeb147",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1504,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "is-valid",
+              "leftValue": "={{ $json.output.isValid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4fc5ff94-0789-48e9-a631-491d20795951",
+      "name": "Is Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1696,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v21.0/{{ $('Extract Comment Data').item.json.commentId }}/private_replies",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "facebookGraphApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "message",
+              "value": "={{ $json.output.dmMessage }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f33219ad-6b40-4526-84b5-c5336977ee0b",
+      "name": "Send Messenger DM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2000,
+        -80
+      ],
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "AHtv0veQPcv392dY",
+          "name": "Facebook Graph account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v21.0/{{ $('Extract Comment Data').item.json.commentId }}/comments",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "facebookGraphApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "message",
+              "value": "={{ $json.output.publicReply }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c8157470-1492-4932-8b09-94b546674a3b",
+      "name": "Send Public Reply",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2016,
+        176
+      ],
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "AHtv0veQPcv392dY",
+          "name": "Facebook Graph account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "1d59d3a7-655d-482f-b48c-177ad4045193",
+      "name": "End - Ignore Comment",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        432
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Facebook Webhook": {
+      "main": [
+        [
+          {
+            "node": "Is Verification Request?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Verification Request?": {
+      "main": [
+        [
+          {
+            "node": "Respond Challenge",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Acknowledge Event (200)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Acknowledge Event (200)": {
+      "main": [
+        [
+          {
+            "node": "Only Feed Comments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Only Feed Comments": {
+      "main": [
+        [
+          {
+            "node": "Extract Comment Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Comment Data": {
+      "main": [
+        [
+          {
+            "node": "Read Campaigns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Campaigns": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Campaigns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Campaigns": {
+      "main": [
+        [
+          {
+            "node": "Analyze Comment (AI Agent)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Comment (AI Agent)": {
+      "main": [
+        [
+          {
+            "node": "Is Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Analyze Comment (AI Agent)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Analyze Comment (AI Agent)",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Valid?": {
+      "main": [
+        [
+          {
+            "node": "Send Messenger DM",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Public Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "End - Ignore Comment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "b417f577-3515-4937-99ee-3e40479b455b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "34a643bb7b00faae8cb32ae37bd11e01ebf9086dc328df86ef671b9a58d07a8b"
+  },
+  "nodeGroups": [],
+  "id": "teK6klaPIacNi4EA",
+  "tags": []
+}
